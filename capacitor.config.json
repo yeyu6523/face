@@ -1,0 +1,6 @@
+{
+  "appId": "com.ye.faceexpression",
+  "appName": "Face Expression",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

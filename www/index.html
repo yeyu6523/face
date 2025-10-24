@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>FaceApp - 人脸识别</title>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        .content-wrapper {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+        }
+        
+        .video-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #000;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .results-panel {
+            flex: 0 0 300px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .results-panel h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            text-align: center;
+        }
+        
+        .results-container {
+            min-height: 200px;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-card:last-child {
+            margin-bottom: 0;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .result-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .result-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .result-value {
+            font-weight: 500;
+            color: #667eea;
+        }
+        
+        .no-face {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px 0;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .settings {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .switch {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .switch input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            background: #e8f4fd;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            font-weight: 500;
+        }
+        
+        .status.error {
+            background: #fde8e8;
+            border-left-color: #e74c3c;
+            color: #c0392b;
+        }
+        
+        .status.success {
+            background: #e8f8ef;
+            border-left-color: #27ae60;
+            color: #229954;
+        }
+        
+        .info {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .results-panel {
+                flex: 0 0 auto;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 智能人脸识别</h1>
+            <p>实时检测年龄、性别和情绪</p>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="video-panel">
+                <div class="video-container">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="overlay"></canvas>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn" class="btn btn-primary">
+                        <span>▶️</span> 启动摄像头
+                    </button>
+                    <button id="stopBtn" class="btn btn-secondary" disabled>
+                        <span>⏹️</span> 停止
+                    </button>
+                    
+                    <div class="settings">
+                        <label class="switch">
+                            <input id="lowPower" type="checkbox">
+                            <span>节能模式</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-panel">
+                <h2>识别结果</h2>
+                <div id="resultsContainer" class="results-container">
+                    <div class="no-face">未检测到人脸</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="status" class="status">
+            状态：初始化中...
+        </div>
+
+        <div class="info">
+            <p>确保 models 文件夹与网页文件在同一目录下</p>
+        </div>
+    </div>
+
+    <!-- 先加载 face-api.js -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <script>
+    // 关键配置 - 确保这些没变
+    const MODEL_URL = './models';
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('overlay');
+    const ctx = overlay.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const lowPowerCheckbox = document.getElementById('lowPower');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    let stream = null;
+    let detectInterval = null;
+    let lastResults = [];
+
+    // 增强的错误处理
+    async function loadModels() {
+        try {
+            updateStatus('状态：开始加载模型...', 'normal');
+            console.log('模型路径:', MODEL_URL);
+            
+            // 检查 face-api 是否加载
+            if (typeof faceapi === 'undefined') {
+                throw new Error('face-api.js 库未正确加载');
+            }
+            
+            // 逐个加载模型以便调试
+            updateStatus('状态：加载人脸检测模型...', 'normal');
+            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+            console.log('人脸检测模型加载成功');
+            
+            updateStatus('状态：加载特征点模型...', 'normal');
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            console.log('特征点模型加载成功');
+            
+            updateStatus('状态：加载年龄性别模型...', 'normal');
+            await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
+            console.log('年龄性别模型加载成功');
+            
+            updateStatus('状态：加载情绪识别模型...', 'normal');
+            await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+            console.log('情绪识别模型加载成功');
+            
+            updateStatus('状态：所有模型加载完成！点击"启动摄像头"开始识别', 'success');
+            
+        } catch (err) {
+            console.error('模型加载失败:', err);
+            updateStatus('错误：模型加载失败 - ' + err.message, 'error');
+        }
+    }
+
+    function updateStatus(message, type = 'normal') {
+        statusEl.textContent = message;
+        statusEl.className = 'status';
+        if (type === 'error') {
+            statusEl.classList.add('error');
+        } else if (type === 'success') {
+            statusEl.classList.add('success');
+        }
+    }
+
+    async function startCamera() {
+        if (stream) return;
+        try {
+            updateStatus('状态：请求摄像头权限...', 'normal');
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'user',
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                }, 
+                audio: false 
+            });
+            
+            video.srcObject = stream;
+            await video.play();
+
+            // 设置 overlay 大小
+            const w = Math.min(640, video.videoWidth || 640);
+            const h = Math.round((video.videoHeight || 480) * (w / (video.videoWidth || 640)));
+            video.style.width = w + 'px';
+            overlay.width = w;
+            overlay.height = h;
+            overlay.style.width = w + 'px';
+            overlay.style.height = h + 'px';
+
+            startDetectionLoop();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            updateStatus('状态：摄像头启动，识别中...', 'success');
+        } catch (err) {
+            console.error('摄像头错误:', err);
+            updateStatus('错误：无法访问摄像头 - ' + (err.message || err), 'error');
+        }
+    }
+
+    function stopCamera() {
+        if (!stream) return;
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        clearInterval(detectInterval); 
+        detectInterval = null;
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        updateStatus('状态：已停止', 'normal');
+        
+        // 清空结果
+        resultsContainer.innerHTML = '<div class="no-face">未检测到人脸</div>';
+        lastResults = [];
+    }
+
+    // 更新结果显示
+    function updateResultsDisplay(results) {
+        if (results.length === 0) {
+            resultsContainer.innerHTML = '<div class="no-face">未检测到人脸</div>';
+            return;
+        }
+        
+        let html = '';
+        results.forEach((result, index) => {
+            const age = result.age ? Math.round(result.age) : '未知';
+            const gender = result.gender ? (result.gender === 'male' ? '男性' : '女性') : '未知';
+            const genderProb = result.genderProbability ? Math.round(result.genderProbability * 100) + '%' : '';
+            const expressions = result.expressions || {};
+            
+            // 找到最可能的情绪
+            let topExpression = '未知';
+            let topExpressionProb = 0;
+            Object.keys(expressions).forEach(expression => {
+                if (expressions[expression] > topExpressionProb) {
+                    topExpressionProb = expressions[expression];
+                    topExpression = expression;
+                }
+            });
+            
+            // 翻译情绪名称
+            const expressionMap = {
+                'neutral': '中性',
+                'happy': '开心',
+                'sad': '悲伤',
+                'angry': '生气',
+                'fearful': '恐惧',
+                'disgusted': '厌恶',
+                'surprised': '惊讶'
+            };
+            
+            const expressionText = expressionMap[topExpression] || topExpression;
+            const expressionProb = Math.round(topExpressionProb * 100) + '%';
+            
+            html += `
+                <div class="result-card">
+                    <h3>人脸 ${index + 1}</h3>
+                    <div class="result-item">
+                        <span class="result-label">年龄:</span>
+                        <span class="result-value">${age} 岁</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">性别:</span>
+                        <span class="result-value">${gender} (${genderProb})</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">情绪:</span>
+                        <span class="result-value">${expressionText} (${expressionProb})</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        resultsContainer.innerHTML = html;
+    }
+
+    async function detectOnce() {
+        if (!video || video.paused || video.ended) return;
+        try {
+            const detectOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
+            const results = await faceapi.detectAllFaces(video, detectOptions)
+                .withFaceLandmarks()
+                .withAgeAndGender()
+                .withFaceExpressions();
+            
+            // 清空画布
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            
+            // 绘制人脸框（不镜像）
+            results.forEach(d => {
+                const box = d.detection.box;
+                ctx.lineWidth = Math.max(2, Math.round(box.width/100));
+                ctx.strokeStyle = '#00ff99';
+                ctx.strokeRect(box.x, box.y, box.width, box.height);
+            });
+            
+            // 更新右侧结果面板
+            if (JSON.stringify(results) !== JSON.stringify(lastResults)) {
+                lastResults = results;
+                updateResultsDisplay(results);
+            }
+            
+        } catch (err) {
+            console.error('检测错误:', err);
+        }
+    }
+
+    function startDetectionLoop() {
+        if (detectInterval) clearInterval(detectInterval);
+        const intervalMs = lowPowerCheckbox.checked ? 400 : 200;
+        detectInterval = setInterval(() => {
+            detectOnce().catch(err => console.error('检测循环错误', err));
+        }, intervalMs);
+    }
+
+    // 事件监听器
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopCamera();
+    });
+
+    startBtn.addEventListener('click', startCamera);
+    stopBtn.addEventListener('click', stopCamera);
+
+    // 页面加载完成后初始化
+    window.addEventListener('load', function() {
+        console.log('页面加载完成，开始初始化...');
+        loadModels();
+    });
+    </script>
+</body>
+</html>
